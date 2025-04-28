@@ -1,6 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { CreateGenerationCommand, FlashcardDTO, GenerationDTO, GenerationResultDTO } from "../../types";
+import type {
+  CreateGenerationCommand,
+  FlashcardDTO,
+  GenerationDTO,
+  GenerationResultDTO,
+  GenerationsResponseDTO,
+  Pagination,
+} from "../../types";
 import crypto from "crypto";
+import type { PaginationParams } from "../schemas/generationSchemas";
 
 /**
  * Calculates the SHA-256 hash of the provided text
@@ -100,4 +108,76 @@ export const createGeneration = async (
 
     throw error;
   }
+};
+
+/**
+ * Retrieves user generations with pagination support
+ */
+export const getGenerations = async (
+  supabase: SupabaseClient,
+  userId: string,
+  paginationParams: PaginationParams
+): Promise<GenerationsResponseDTO> => {
+  const { page, limit } = paginationParams;
+  const offset = (page - 1) * limit;
+
+  // Get the total count of records for pagination metadata
+  const { count: total, error: countError } = await supabase
+    .from("generations")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if (countError) {
+    throw countError;
+  }
+
+  // Query user generations with pagination
+  const { data: generations, error } = await supabase
+    .from("generations")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    throw error;
+  }
+
+  // Return the paginated results
+  return {
+    generations: generations as GenerationDTO[],
+    pagination: {
+      page,
+      limit,
+      total: total || 0,
+    },
+  };
+};
+
+/**
+ * Retrieves a specific generation by ID
+ * Ensures that the user has access to this generation
+ */
+export const getGenerationById = async (
+  supabase: SupabaseClient,
+  userId: string,
+  generationId: number
+): Promise<GenerationDTO> => {
+  // Query the specific generation by ID and user_id
+  const { data, error } = await supabase
+    .from("generations")
+    .select("*")
+    .eq("id", generationId)
+    .eq("user_id", userId)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      // Record not found (Postgres code for "no rows returned")
+      throw new Error("Generation not found");
+    }
+    throw error;
+  }
+
+  return data as GenerationDTO;
 };
