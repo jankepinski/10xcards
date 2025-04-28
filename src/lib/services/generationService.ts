@@ -5,7 +5,6 @@ import type {
   GenerationDTO,
   GenerationResultDTO,
   GenerationsResponseDTO,
-  Pagination,
 } from "../../types";
 import crypto from "crypto";
 import type { PaginationParams } from "../schemas/generationSchemas";
