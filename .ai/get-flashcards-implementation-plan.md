@@ -1,102 +1,76 @@
-# API Endpoint Implementation Plan: POST /flashcards
+# API Endpoint Implementation Plan: GET /flashcards
 
 ## 1. Przegląd punktu końcowego
 
-Endpoint POST /flashcards służy do tworzenia jednego lub wielu flashcards. Umożliwia on dodawanie fiszek zarówno ręcznie (źródło 'manual'), jak i poprzez wyniki generacji AI (źródła 'ai-full' lub 'ai-edited'). Przy operacjach związanych z AI, jeśli flashcard pochodzi z automatycznej generacji, wymagany jest identyfikator sesji generacji (generation_id).
+Endpoint GET /flashcards umożliwia pobranie spersonalizowanej, paginowanej listy fiszek powiązanych z obecnie zalogowanym użytkownikiem. Wykorzystując mechanizmy RLS (Row-Level Security) dostępne w Supabase, endpoint gwarantuje, że użytkownik widzi jedynie swoje dane. Endpoint wspiera opcjonalne parametry do sortowania i filtrowania wyników.
 
 ## 2. Szczegóły żądania
 
-- **Metoda HTTP:** POST
-- **URL:** /flashcards
-- **Parametry:**
-  - **Wymagane:**
-    - `flashcards`: tablica obiektów, gdzie każdy obiekt musi zawierać:
-      - `front`: tekst fiszki (maksymalnie 200 znaków)
-      - `back`: treść z odpowiedzią fiszki (maksymalnie 500 znaków)
-      - `source`: źródło danych, przyjmujące wartości: 'manual', 'ai-full', lub 'ai-edited'
+- **Metoda HTTP:** GET
+- **Ścieżka URL:** /flashcards
+- **Parametry zapytania:**
   - **Opcjonalne:**
-    - `generation_id`: liczba całkowita; obowiązkowe gdy `source` ma wartość 'ai-full' lub 'ai-edited'
-- **Request Body Example:**
-  ```json
-  {
-    "flashcards": [
-      {
-        "front": "Example front text",
-        "back": "Example back text",
-        "source": "manual",
-        "generation_id": null
-      }
-    ]
-  }
-  ```
+    - `page` (domyślnie 1) – numer strony do pobrania
+    - `limit` (domyślnie 20) – liczba rekordów na stronę
+    - `sort` – kolumna do sortowania, np. `created_at`
+    - `filter` – warunek filtrowania, np. po źródle (manual, ai-full, ai-edited)
+- **Body:** Brak
 
 ## 3. Wykorzystywane typy
 
-- `FlashcardDTO`: Typ reprezentujący fiszkę zwracaną w odpowiedzi API
-- `CreateFlashcardCommand`: Definiuje strukturę pojedynczej fiszki do utworzenia (bez systemowych pól jak id, created_at, updated_at, user_id)
-- `CreateFlashcardsCommand`: Typ definiujący ładunek dla tworzenia jednej lub wielu fiszek
+- `FlashcardDTO` – reprezentacja pojedynczej fiszki.
+- `FlashcardsResponseDTO` – struktura odpowiedzi zawierająca listę fiszek i metadane paginacji.
+- `Pagination` – informacje o paginacji (page, limit, total).
 
 ## 4. Szczegóły odpowiedzi
 
-- **Kod odpowiedzi:** 201 (utworzenie zasobu)
-- **Struktura odpowiedzi:** Obiekt JSON zawierający tablicę utworzonych fiszek:
+- **Struktura odpowiedzi:**
   ```json
   {
     "flashcards": [
-      {
-        "id": 1,
-        "front": "...",
-        "back": "...",
-        "source": "manual",
-        "generation_id": null,
-        "created_at": "...",
-        "updated_at": "..."
-      }
-    ]
+      { "id": 1, "front": "...", "back": "...", "source": "manual", "created_at": "..." },
+      ...
+    ],
+    "pagination": { "page": 1, "limit": 20, "total": 100 }
   }
   ```
+- **Kody statusu:**
+  - 200 – sukces, dane zostały pobrane
+  - 401 – nieautoryzowany dostęp
+  - 500 – błąd serwera
 
 ## 5. Przepływ danych
 
-1. Klient wysyła żądanie HTTP POST do endpointu /flashcards z odpowiednim payloadem.
-2. Serwer odbiera żądanie i weryfikuje autentyczność użytkownika (np. przez sesję Supabase Auth).
-3. Walidacja danych wejściowych przy użyciu biblioteki Zod:
-   - Sprawdzanie długości pól `front` (max 200 znaków) oraz `back` (max 500 znaków).
-   - Weryfikacja, że `source` ma jedną z dozwolonych wartości ('manual', 'ai-full', 'ai-edited').
-   - Jeśli `source` to 'ai-full' lub 'ai-edited', sprawdzenie obecności `generation_id`.
-4. Kontrola RLS: upewnienie się, że operacja jest wykonywana przez autoryzowanego użytkownika, a `user_id` jest przypisane do nowej fiszki.
-5. Przekazanie żądania do warstwy serwisowej (np. `src/lib/services/flashcards.ts`), która odpowiada za interakcję z bazą danych (wstawienie rekordu do tabeli `flashcards`).
-6. W przypadku powodzenia, serwis zwraca utworzone dane, a endpoint odpowiada klientowi z kodem 201 i JSON-em zawierającym dane fiszek.
+1. **Autoryzacja:** Endpoint pobiera obiekt `supabase` z `locals` i wywołuje metodę `supabase.auth.getSession()` w celu pobrania sesji użytkownika. Jeśli sesja nie istnieje, zwracana jest odpowiedź 401 Unauthorized.
+2. **Walidacja parametrów:** Endpoint parsuje i weryfikuje opcjonalne parametry `page`, `limit`, `sort` i `filter`, przypisując wartości domyślne tam, gdzie to konieczne.
+3. **Zapytanie do bazy:** Za pomocą Supabase klienta wykonywane jest zapytanie do tabeli `flashcards` z filtrem `user_id = auth.uid()` oraz zastosowaniem mechanizmu RLS.
+4. **Sortowanie i paginacja:** Dane są sortowane wg parametru `sort` (np. `created_at`) i dzielone na strony za pomocą LIMIT/OFFSET zgodnie z wartościami `page` i `limit`.
+5. **Formatowanie odpowiedzi:** Wynik zapytania jest transformowany do struktury `FlashcardsResponseDTO` i zwracany jako JSON.
 
 ## 6. Względy bezpieczeństwa
 
-- **Autoryzacja:** Endpoint wymaga, aby użytkownik był zalogowany. Użycie mechanizmu Supabase Auth oraz RLS zapewnia, że użytkownik ma dostęp tylko do swoich danych.
-- **Walidacja Danych:** Weryfikacja poprawności danych wejściowych za pomocą Zod minimalizuje ryzyko wprowadzenia nieprawidłowych lub szkodliwych danych.
-- **Ochrona przed SQL Injection:** Używanie bezpiecznych metod wstawiania danych do bazy oraz wykorzystanie mechanizmu klauzul RLS
+- **Uwierzytelnianie:** Endpoint sprawdza sesję użytkownika poprzez wywołanie `supabase.auth.getSession()` z lokalnych zmiennych. Brak sesji skutkuje zwróceniem błędu 401 Unauthorized.
+- **Autoryzacja:** Wykorzystanie mechanizmu RLS w Supabase zapewnia, że użytkownik otrzyma tylko swoje fiszki.
+- **Walidacja wejścia:** Wszystkie przyjmowane parametry są walidowane pod kątem właściwych typów i wartości domyślnych.
+- **Zapobieganie atakom:** Użycie parametrów i mechanizmów ORM Supabase zapobiega SQL Injection.
 
 ## 7. Obsługa błędów
 
-- **400 Bad Request:** W przypadku błędów walidacji (np. brak pól, nieprawidłowe wartości, niezgodność długości tekstu).
-- **401 Unauthorized:** Gdy użytkownik nie jest uwierzytelniony lub nie ma odpowiednich uprawnień.
-- **500 Internal Server Error:** W przypadku nieoczekiwanych błędów po stronie serwera lub problemów z bazą danych.
-- Dodatkowo, błędy związane z przetwarzaniem danych AI mogą być logowane w tabeli `generation_error_logs`.
+- **401 Unauthorized:** Zwracane, gdy użytkownik nie jest zalogowany.
+- **400 Bad Request:** Zwracane, gdy parametry zapytania są niepoprawne (np. wartość `page` lub `limit` nie jest liczbą).
+- **500 Internal Server Error:** Zwracane w przypadku nieoczekiwanych błędów podczas przetwarzania żądania lub zapytań do bazy.
 
-## 8. Rozważenia dotyczące wydajności
+## 8. Rozważania dotyczące wydajności
 
-- **Batch Insert:** Przyjmowanie wielu fiszek jednocześnie i użycie operacji batch insert aby zminimalizować liczbę zapytań do bazy danych.
-- **Indeksy:** Wykorzystanie indeksów na kolumnach `user_id` i `generation_id` optymalizuje wyszukiwanie i filtrowanie.
-- **Limity:** Rozważenie limitu wielkości przesyłanego żądania dla bardzo dużej liczby fiszek.
+- **Indeksy:** Wykorzystanie indeksów na kolumnach `user_id` (i ewentualnie `created_at` dla sortowania) w tabeli `flashcards`.
+- **Paginacja:** Użycie LIMIT/OFFSET do efektywnego dzielenia dużych zbiorów danych.
+- **Optymalizacja:** Monitorowanie i ewentualna optymalizacja zapytań do bazy, szczególnie przy rosnącej liczbie rekordów.
 
 ## 9. Etapy wdrożenia
 
-1. **Implementacja walidacji:**
-   - Utworzyć schemat walidacji z użyciu Zod w pliku endpointa (np. `src/pages/api/flashcards.ts`).
-2. **Implementacja logiki endpointu:**
-   - Odbieranie i weryfikacja żądania.
-   - Sprawdzanie autoryzacji użytkownika.
-   - Warunkowa walidacja obecności `generation_id` przy źródłach AI.
-3. **Delegowanie logiki do serwisu:**
-   - Utworzyć lub zaktualizować serwis w `src/lib/services/flashcards.ts`, który będzie odpowiedzialny za interakcję z bazą danych (wstawianie rekordów).
-4. **Obsługa odpowiedzi i błędów:**
-   - Zwracanie poprawnych kodów HTTP oraz komunikatów błędów zgodnie z warunkami specyfikacji.
-   - Logowanie błędów do tabeli `generation_error_logs` tam, gdzie to konieczne.
+1. **Utworzenie endpointu:** Stworzenie pliku `src/pages/api/flashcards.ts` z metodą GET.
+2. **Implementacja autoryzacji:** Dodanie logiki weryfikacji sesji użytkownika poprzez wywołanie `supabase.auth.getSession()` w endpointzie. Brak sesji powinien skutkować zwróceniem odpowiedzi 401 Unauthorized.
+3. **Walidacja parametrów:** Implementacja funkcji odpowiedzialnej za parsowanie i walidację parametrów zapytania.
+4. **Integracja z usługą:** Wywołanie metody serwisowej, np. `flashcardsService.getFlashcards()`, która komunikuje się z bazą danych przez Supabase z uwzględnieniem mechanizmu RLS.
+5. **Formatowanie odpowiedzi:** Transformacja wyników zapytania do struktury `FlashcardsResponseDTO`.
+6. **Obsługa błędów:** Dodanie logiki obsługi błędów, zwracanie odpowiednich kodów statusu oraz logowanie błędów.

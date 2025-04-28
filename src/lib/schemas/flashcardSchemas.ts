@@ -29,3 +29,18 @@ export const createFlashcardSchema = z
 export const createFlashcardsSchema = z.object({
   flashcards: z.array(createFlashcardSchema).min(1, "At least one flashcard is required"),
 });
+
+/**
+ * Schema for validating query parameters for retrieving flashcards
+ */
+export const getFlashcardsQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+  sort: z.enum(["created_at", "updated_at", "front", "back"]).optional().default("created_at"),
+  filter: z.enum(["manual", "ai-full", "ai-edited"]).optional(),
+});
+
+/**
+ * Type for validated query parameters for retrieving flashcards
+ */
+export type GetFlashcardsQueryParams = z.infer<typeof getFlashcardsQuerySchema>;

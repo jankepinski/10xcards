@@ -1,5 +1,6 @@
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import type { CreateFlashcardCommand, FlashcardDTO } from "../../types";
+import type { CreateFlashcardCommand, FlashcardDTO, FlashcardsResponseDTO, Pagination } from "../../types";
+import type { GetFlashcardsQueryParams } from "../schemas/flashcardSchemas";
 
 /**
  * Custom error class for flashcard creation errors
@@ -127,5 +128,71 @@ function handleDatabaseError(error: PostgrestError): never {
       throw new FlashcardServiceError("Database configuration error", "DB_CONFIGURATION_ERROR", error);
     default:
       throw new FlashcardServiceError(`Database error: ${error.message}`, "DB_ERROR", error);
+  }
+}
+
+/**
+ * Retrieves flashcards from the database with pagination, sorting, and filtering.
+ *
+ * @param supabase The Supabase client from context.locals
+ * @param params Query parameters for pagination, sorting, and filtering
+ * @returns Object containing the flashcards and pagination metadata
+ * @throws FlashcardServiceError if operation fails
+ */
+export async function getFlashcards(
+  supabase: SupabaseClient,
+  params: GetFlashcardsQueryParams
+): Promise<FlashcardsResponseDTO> {
+  try {
+    // Calculate offset based on page and limit
+    const offset = (params.page - 1) * params.limit;
+
+    // Build the query
+    let query = supabase.from("flashcards").select("*", { count: "exact" });
+
+    // Apply filter if provided
+    if (params.filter) {
+      query = query.eq("source", params.filter);
+    }
+
+    // Apply sorting
+    query = query.order(params.sort, { ascending: false });
+
+    // Apply pagination
+    query = query.range(offset, offset + params.limit - 1);
+
+    // Execute the query
+    const { data, error, count } = await query;
+
+    // Handle database error
+    if (error) {
+      handleDatabaseError(error);
+    }
+
+    // Create pagination metadata
+    const pagination: Pagination = {
+      page: params.page,
+      limit: params.limit,
+      total: count || 0,
+    };
+
+    // Return the response DTO
+    return {
+      flashcards: data as FlashcardDTO[],
+      pagination,
+    };
+  } catch (error) {
+    // If it's already a FlashcardServiceError, rethrow it
+    if (error instanceof FlashcardServiceError) {
+      throw error;
+    }
+
+    // Otherwise wrap it
+    console.error("Error fetching flashcards:", error);
+    throw new FlashcardServiceError(
+      "Failed to fetch flashcards",
+      "INTERNAL_ERROR",
+      error instanceof Error ? error.message : String(error)
+    );
   }
 }
