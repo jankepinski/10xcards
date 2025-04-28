@@ -88,13 +88,13 @@ Celem tego punktu końcowego jest zainicjowanie sesji generacji fiszek przy uży
 
 ## 9. Etapy wdrożenia
 
-1. **Walidacja wejścia:**
-   - Implementacja schematu Zod dla `CreateGenerationCommand`.
-2. **Warstwa serwisowa:**
-   - Utworzenie nowej usługi (np. `src/lib/services/generationService.ts`) obsługującej logikę generowania fiszek, w tym wywołanie AI oraz zapis do bazy.
-3. **Endpoint REST API:**
-   - Implementacja endpointa w `src/pages/api/generations.ts`:
-     - Odbiór i walidacja danych wejściowych.
-     - Wywołanie usługi AI (Openrouter.ai).
-     - Zapis rekordów w tabelach `generations` i `flashcards`.
-     - Obsługa błędów i logowanie, w tym zapis błędów do `generation_error_logs`.
+1. Implementacja walidacji wejścia przy użyciu Zod dla `CreateGenerationCommand`.
+2. Utworzenie usługi generującej w `src/lib/services/generationService.ts`, która obsługuje logikę generowania fiszek, integruje wywołanie AI oraz zapis do bazy.
+3. Implementacja endpointa REST API w `src/pages/api/generations.ts`, odpowiedzialnego za odbiór i walidację danych wejściowych.
+4. Integracja z zewnętrzną usługą AI (Openrouter.ai) w celu generowania fiszek.
+5. Zapis danych do tabel `generations` i `flashcards` oraz rejestracja przebiegu procesu generacji.
+6. Implementacja mechanizmu obsługi błędów, w tym logowanie oraz zapisywanie błędów do `generation_error_logs`.
+
+## 10. Uwagi końcowe
+
+Endpoint POST /generations nie zapisuje żadnych flashcards do bazy danych - zwraca je tylko na w response.

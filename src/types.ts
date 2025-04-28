@@ -75,6 +75,7 @@ export interface GenerationResultDTO {
  */
 export interface GenerationsResponseDTO {
   generations: GenerationDTO[];
+  pagination: Pagination;
 }
 
 /**
