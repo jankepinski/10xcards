@@ -41,6 +41,18 @@ export const getFlashcardsQuerySchema = z.object({
 });
 
 /**
+ * Schema for validating the flashcard ID parameter
+ */
+export const flashcardIdSchema = z.object({
+  id: z.coerce.number().int().positive("Flashcard ID must be a positive integer"),
+});
+
+/**
  * Type for validated query parameters for retrieving flashcards
  */
 export type GetFlashcardsQueryParams = z.infer<typeof getFlashcardsQuerySchema>;
+
+/**
+ * Type for validated flashcard ID parameter
+ */
+export type FlashcardIdParam = z.infer<typeof flashcardIdSchema>;

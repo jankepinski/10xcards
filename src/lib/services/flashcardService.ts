@@ -196,3 +196,46 @@ export async function getFlashcards(
     );
   }
 }
+
+/**
+ * Retrieves a single flashcard by ID.
+ *
+ * @param supabase The Supabase client from context.locals
+ * @param flashcardId The ID of the flashcard to retrieve
+ * @returns The requested flashcard or null if not found
+ * @throws FlashcardServiceError if operation fails
+ */
+export async function getFlashcardById(supabase: SupabaseClient, flashcardId: number): Promise<FlashcardDTO | null> {
+  try {
+    // Query the database for the flashcard with the specified ID
+    // Supabase RLS will automatically filter by user_id
+    const { data, error } = await supabase.from("flashcards").select("*").eq("id", flashcardId).single();
+
+    // Handle database error
+    if (error) {
+      // If the error is a "not found" error, return null
+      if (error.code === "PGRST116") {
+        return null;
+      }
+
+      // Otherwise, handle other database errors
+      handleDatabaseError(error);
+    }
+
+    // Return the flashcard (or null if not found, although this should be caught above)
+    return data as FlashcardDTO;
+  } catch (error) {
+    // If it's already a FlashcardServiceError, rethrow it
+    if (error instanceof FlashcardServiceError) {
+      throw error;
+    }
+
+    // Otherwise wrap it
+    console.error("Error fetching flashcard by ID:", error);
+    throw new FlashcardServiceError(
+      "Failed to fetch flashcard",
+      "INTERNAL_ERROR",
+      error instanceof Error ? error.message : String(error)
+    );
+  }
+}
