@@ -1,5 +1,11 @@
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import type { CreateFlashcardCommand, FlashcardDTO, FlashcardsResponseDTO, Pagination } from "../../types";
+import type {
+  CreateFlashcardCommand,
+  FlashcardDTO,
+  FlashcardsResponseDTO,
+  Pagination,
+  UpdateFlashcardCommand,
+} from "../../types";
 import type { GetFlashcardsQueryParams } from "../schemas/flashcardSchemas";
 
 /**
@@ -234,6 +240,126 @@ export async function getFlashcardById(supabase: SupabaseClient, flashcardId: nu
     console.error("Error fetching flashcard by ID:", error);
     throw new FlashcardServiceError(
       "Failed to fetch flashcard",
+      "INTERNAL_ERROR",
+      error instanceof Error ? error.message : String(error)
+    );
+  }
+}
+
+/**
+ * Updates a flashcard by ID.
+ *
+ * @param supabase The Supabase client from context.locals
+ * @param flashcardId The ID of the flashcard to update
+ * @param updateData The data to update the flashcard with (front and back text)
+ * @returns The updated flashcard or null if not found
+ * @throws FlashcardServiceError if operation fails
+ */
+export async function updateFlashcardById(
+  supabase: SupabaseClient,
+  flashcardId: number,
+  updateData: {
+    front: string;
+    back: string;
+  }
+): Promise<FlashcardDTO | null> {
+  try {
+    // First, fetch the existing flashcard to check if it exists and determine source
+    const existingFlashcard = await getFlashcardById(supabase, flashcardId);
+
+    // If flashcard doesn't exist or doesn't belong to user (handled by RLS), return null
+    if (!existingFlashcard) {
+      return null;
+    }
+
+    // Determine the source value for the update
+    // If original source was 'ai-full', change to 'ai-edited'
+    // Otherwise, keep the original source value
+    const source = existingFlashcard.source === "ai-full" ? "ai-edited" : existingFlashcard.source;
+
+    // Prepare update data including the determined source
+    const updateCommand: UpdateFlashcardCommand = {
+      ...updateData,
+      source,
+    };
+
+    // Update the flashcard in the database
+    // RLS will ensure user can only update their own flashcards
+    const { data, error } = await supabase
+      .from("flashcards")
+      .update(updateCommand)
+      .eq("id", flashcardId)
+      .select()
+      .single();
+
+    // Handle database error
+    if (error) {
+      // If the error is a "not found" error, return null
+      if (error.code === "PGRST116") {
+        return null;
+      }
+
+      // Otherwise, handle other database errors
+      handleDatabaseError(error);
+    }
+
+    // Return the updated flashcard
+    return data as FlashcardDTO;
+  } catch (error) {
+    // If it's already a FlashcardServiceError, rethrow it
+    if (error instanceof FlashcardServiceError) {
+      throw error;
+    }
+
+    // Otherwise wrap it
+    console.error("Error updating flashcard by ID:", error);
+    throw new FlashcardServiceError(
+      "Failed to update flashcard",
+      "INTERNAL_ERROR",
+      error instanceof Error ? error.message : String(error)
+    );
+  }
+}
+
+/**
+ * Deletes a flashcard by ID.
+ *
+ * @param supabase The Supabase client from context.locals
+ * @param flashcardId The ID of the flashcard to delete
+ * @returns true if the flashcard was deleted, false if not found
+ * @throws FlashcardServiceError if operation fails
+ */
+export async function deleteFlashcardById(supabase: SupabaseClient, flashcardId: number): Promise<boolean> {
+  try {
+    // First check if the flashcard exists and belongs to the user
+    // This is handled by Row-Level Security in Supabase
+    const exists = await getFlashcardById(supabase, flashcardId);
+
+    // If the flashcard doesn't exist or doesn't belong to the user, return false
+    if (!exists) {
+      return false;
+    }
+
+    // Delete the flashcard
+    const { error } = await supabase.from("flashcards").delete().eq("id", flashcardId);
+
+    // Handle database error
+    if (error) {
+      handleDatabaseError(error);
+    }
+
+    // Return true to indicate success
+    return true;
+  } catch (error) {
+    // If it's already a FlashcardServiceError, rethrow it
+    if (error instanceof FlashcardServiceError) {
+      throw error;
+    }
+
+    // Otherwise wrap it
+    console.error("Error deleting flashcard by ID:", error);
+    throw new FlashcardServiceError(
+      "Failed to delete flashcard",
       "INTERNAL_ERROR",
       error instanceof Error ? error.message : String(error)
     );

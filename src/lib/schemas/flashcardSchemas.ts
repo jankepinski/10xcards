@@ -24,6 +24,17 @@ export const createFlashcardSchema = z
   });
 
 /**
+ * Schema for validating flashcard updates
+ * For the PUT /flashcards/{id} endpoint
+ */
+export const updateFlashcardSchema = z
+  .object({
+    front: z.string().max(200, "Front text must not exceed 200 characters"),
+    back: z.string().max(500, "Back text must not exceed 500 characters"),
+  })
+  .required();
+
+/**
  * Schema for validating a request to create multiple flashcards
  */
 export const createFlashcardsSchema = z.object({
@@ -56,3 +67,8 @@ export type GetFlashcardsQueryParams = z.infer<typeof getFlashcardsQuerySchema>;
  * Type for validated flashcard ID parameter
  */
 export type FlashcardIdParam = z.infer<typeof flashcardIdSchema>;
+
+/**
+ * Type for validated update flashcard data
+ */
+export type UpdateFlashcardData = z.infer<typeof updateFlashcardSchema>;
