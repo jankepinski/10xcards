@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import { createFlashcardsSchema, getFlashcardsQuerySchema } from "../../lib/schemas/flashcardSchemas";
 import { createFlashcards, getFlashcards, FlashcardServiceError } from "../../lib/services/flashcardService";
 import type { CreateFlashcardsCommand, FlashcardDTO, FlashcardsResponseDTO } from "../../types";
-import type { Session } from "@supabase/supabase-js";
+// import type { Session } from "@supabase/supabase-js";
 
 export const prerender = false;
 
@@ -16,25 +16,26 @@ export const GET: APIRoute = async ({ request, locals }) => {
   // Get Supabase client from locals
   const { supabase } = locals;
 
+  // AUTHENTICATION DISABLED
   // Get the session from Supabase client
-  const { data } = await supabase.auth.getSession();
-  const session: Session | null = data.session;
+  // const { data } = await supabase.auth.getSession();
+  // const session: Session | null = data.session;
 
   // Validate authentication
-  if (!session) {
-    return new Response(
-      JSON.stringify({
-        error: "Unauthorized",
-        message: "You must be logged in to use this endpoint",
-      }),
-      {
-        status: 401,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-  }
+  // if (!session) {
+  //   return new Response(
+  //     JSON.stringify({
+  //       error: "Unauthorized",
+  //       message: "You must be logged in to use this endpoint",
+  //     }),
+  //     {
+  //       status: 401,
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //     }
+  //   );
+  // }
 
   try {
     // Get URL to parse query parameters
@@ -128,25 +129,29 @@ export const POST: APIRoute = async ({ request, locals }) => {
   // Get Supabase client from locals
   const { supabase } = locals;
 
+  // AUTHENTICATION DISABLED
   // Get the session from Supabase client
-  const { data } = await supabase.auth.getSession();
-  const session: Session | null = data.session;
+  // const { data } = await supabase.auth.getSession();
+  // const session: Session | null = data.session;
 
   // Validate authentication
-  if (!session) {
-    return new Response(
-      JSON.stringify({
-        error: "Unauthorized",
-        message: "You must be logged in to use this endpoint",
-      }),
-      {
-        status: 401,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-  }
+  // if (!session) {
+  //   return new Response(
+  //     JSON.stringify({
+  //       error: "Unauthorized",
+  //       message: "You must be logged in to use this endpoint",
+  //     }),
+  //     {
+  //       status: 401,
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //     }
+  //   );
+  // }
+
+  // Use fixed user ID
+  const userId = "036b9386-6c46-4f39-9a1a-5f4cb5418ebb";
 
   try {
     // Parse and validate the request body
@@ -174,7 +179,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const command: CreateFlashcardsCommand = validationResult.data;
 
     // Process the flashcards creation
-    const createdFlashcards: FlashcardDTO[] = await createFlashcards(supabase, command.flashcards, session.user.id);
+    const createdFlashcards: FlashcardDTO[] = await createFlashcards(supabase, command.flashcards, userId);
 
     // Return successful response
     return new Response(

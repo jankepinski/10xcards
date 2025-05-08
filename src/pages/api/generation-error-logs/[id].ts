@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { getGenerationErrorLogById } from "../../../lib/services/errorLogsService";
 import { errorLogIdSchema } from "../../../lib/schemas/errorLogSchemas";
-import type { Session } from "@supabase/supabase-js";
+// import type { Session } from "@supabase/supabase-js";
 
 // Disable prerendering as this is a dynamic API endpoint
 export const prerender = false;
@@ -20,17 +20,21 @@ export const GET: APIRoute = async ({ params, locals }) => {
   // Get Supabase client from locals
   const { supabase } = locals;
 
+  // AUTHENTICATION DISABLED
   // Get the session from Supabase client
-  const { data } = await supabase.auth.getSession();
-  const session: Session | null = data.session;
+  // const { data } = await supabase.auth.getSession();
+  // const session: Session | null = data.session;
 
   // Ensure user is authenticated
-  if (!session) {
-    return new Response(JSON.stringify({ error: "Unauthorized - Please log in to access error logs" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  // if (!session) {
+  //   return new Response(JSON.stringify({ error: "Unauthorized - Please log in to access error logs" }), {
+  //     status: 401,
+  //     headers: { "Content-Type": "application/json" },
+  //   });
+  // }
+
+  // Use fixed user ID
+  const userId = "036b9386-6c46-4f39-9a1a-5f4cb5418ebb";
 
   try {
     // Validate the ID parameter
@@ -50,7 +54,6 @@ export const GET: APIRoute = async ({ params, locals }) => {
 
     // Get the validated ID
     const { id } = result.data;
-    const userId = session.user.id;
 
     // Fetch the error log
     const { data: errorLog, error } = await getGenerationErrorLogById(supabase, id, userId);
