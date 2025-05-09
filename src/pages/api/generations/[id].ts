@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import { generationIdSchema } from "../../../lib/schemas/generationSchemas";
 import { getGenerationById } from "../../../lib/services/generationService";
 import type { GenerationDTO } from "../../../types";
-import type { Session } from "@supabase/supabase-js";
+// import type { Session } from "@supabase/supabase-js";
 
 // Disable prerendering as this is a dynamic API endpoint
 export const prerender = false;
@@ -17,25 +17,29 @@ export const GET: APIRoute = async ({ params, locals }) => {
   // Get Supabase client from locals
   const { supabase } = locals;
 
+  // AUTHENTICATION DISABLED
   // Get the session from Supabase client
-  const { data } = await supabase.auth.getSession();
-  const session: Session | null = data.session;
+  // const { data } = await supabase.auth.getSession();
+  // const session: Session | null = data.session;
 
   // Validate authentication
-  if (!session) {
-    return new Response(
-      JSON.stringify({
-        error: "Unauthorized",
-        message: "You must be logged in to use this endpoint",
-      }),
-      {
-        status: 401,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-  }
+  // if (!session) {
+  //   return new Response(
+  //     JSON.stringify({
+  //       error: "Unauthorized",
+  //       message: "You must be logged in to use this endpoint",
+  //     }),
+  //     {
+  //       status: 401,
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //     }
+  //   );
+  // }
+
+  // Use fixed user ID
+  const userId = "036b9386-6c46-4f39-9a1a-5f4cb5418ebb";
 
   try {
     // Validate the ID parameter
@@ -59,7 +63,6 @@ export const GET: APIRoute = async ({ params, locals }) => {
     }
 
     // Get the generation using the service
-    const userId = session.user.id;
     const generationId = validationResult.data.id;
 
     try {

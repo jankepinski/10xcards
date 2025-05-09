@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { getFlashcardById, updateFlashcardById, deleteFlashcardById } from "../../../lib/services/flashcardService";
 import { flashcardIdSchema, updateFlashcardSchema } from "../../../lib/schemas/flashcardSchemas";
-import type { Session } from "@supabase/supabase-js";
+// import type { Session } from "@supabase/supabase-js";
 import type { DeleteResponseDTO } from "../../../types";
 
 // Disable prerendering as this is a dynamic API endpoint
@@ -21,17 +21,18 @@ export const GET: APIRoute = async ({ params, locals }) => {
   // Get Supabase client from locals
   const { supabase } = locals;
 
+  // AUTHENTICATION DISABLED
   // Get the session from Supabase client
-  const { data } = await supabase.auth.getSession();
-  const session: Session | null = data.session;
+  // const { data } = await supabase.auth.getSession();
+  // const session: Session | null = data.session;
 
   // Ensure user is authenticated
-  if (!session) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  // if (!session) {
+  //   return new Response(JSON.stringify({ error: "Unauthorized" }), {
+  //     status: 401,
+  //     headers: { "Content-Type": "application/json" },
+  //   });
+  // }
 
   try {
     // Validate the ID parameter
@@ -99,17 +100,18 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
   // Get Supabase client from locals
   const { supabase } = locals;
 
+  // AUTHENTICATION DISABLED
   // Get the session from Supabase client
-  const { data } = await supabase.auth.getSession();
-  const session: Session | null = data.session;
+  // const { data } = await supabase.auth.getSession();
+  // const session: Session | null = data.session;
 
   // Ensure user is authenticated
-  if (!session) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  // if (!session) {
+  //   return new Response(JSON.stringify({ error: "Unauthorized" }), {
+  //     status: 401,
+  //     headers: { "Content-Type": "application/json" },
+  //   });
+  // }
 
   try {
     // Validate the ID parameter
@@ -200,17 +202,18 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
   // Get Supabase client from locals
   const { supabase } = locals;
 
+  // AUTHENTICATION DISABLED
   // Get the session from Supabase client
-  const { data } = await supabase.auth.getSession();
-  const session: Session | null = data.session;
+  // const { data } = await supabase.auth.getSession();
+  // const session: Session | null = data.session;
 
   // Ensure user is authenticated
-  if (!session) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  // if (!session) {
+  //   return new Response(JSON.stringify({ error: "Unauthorized" }), {
+  //     status: 401,
+  //     headers: { "Content-Type": "application/json" },
+  //   });
+  // }
 
   try {
     // Validate the ID parameter

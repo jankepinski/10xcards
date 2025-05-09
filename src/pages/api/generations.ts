@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import { createGenerationSchema, paginationSchema } from "../../lib/schemas/generationSchemas";
 import { createGeneration, getGenerations } from "../../lib/services/generationService";
 import type { CreateGenerationCommand, GenerationResultDTO, GenerationsResponseDTO } from "../../types";
-import type { Session } from "@supabase/supabase-js";
+// import type { Session } from "@supabase/supabase-js";
 
 export const prerender = false;
 
@@ -17,24 +17,27 @@ export const POST: APIRoute = async ({ request, locals }) => {
   // Get Supabase client from locals
   const { supabase } = locals;
 
-  // Get the session from Supabase client
-  const { data } = await supabase.auth.getSession();
-  const session: Session | null = data.session;
+  // AUTHENTICATION DISABLED
+  // const { data } = await supabase.auth.getSession();
+  // const session: Session | null = data.session;
 
-  if (!session) {
-    return new Response(
-      JSON.stringify({
-        error: "Unauthorized",
-        message: "You must be logged in to use this endpoint",
-      }),
-      {
-        status: 401,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-  }
+  // if (!session) {
+  //   return new Response(
+  //     JSON.stringify({
+  //       error: "Unauthorized",
+  //       message: "You must be logged in to use this endpoint",
+  //     }),
+  //     {
+  //       status: 401,
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //     }
+  //   );
+  // }
+
+  // Use fixed user ID
+  const userId = "036b9386-6c46-4f39-9a1a-5f4cb5418ebb";
 
   try {
     // Parse and validate the request body
@@ -62,7 +65,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     };
 
     // Process the generation
-    const result: GenerationResultDTO = await createGeneration(supabase, command, session.user.id);
+    const result: GenerationResultDTO = await createGeneration(supabase, command, userId);
 
     // Return successful response
     return new Response(JSON.stringify(result), {
@@ -101,24 +104,28 @@ export const GET: APIRoute = async ({ request, locals }) => {
   // Get Supabase client from locals
   const { supabase } = locals;
 
+  // AUTHENTICATION DISABLED
   // Get the session from Supabase client
-  const { data } = await supabase.auth.getSession();
-  const session: Session | null = data.session;
+  // const { data } = await supabase.auth.getSession();
+  // const session: Session | null = data.session;
 
-  if (!session) {
-    return new Response(
-      JSON.stringify({
-        error: "Unauthorized",
-        message: "You must be logged in to use this endpoint",
-      }),
-      {
-        status: 401,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-  }
+  // if (!session) {
+  //   return new Response(
+  //     JSON.stringify({
+  //       error: "Unauthorized",
+  //       message: "You must be logged in to use this endpoint",
+  //     }),
+  //     {
+  //       status: 401,
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //     }
+  //   );
+  // }
+
+  // Use fixed user ID
+  const userId = "036b9386-6c46-4f39-9a1a-5f4cb5418ebb";
 
   try {
     // Extract and validate pagination parameters from the URL
@@ -148,7 +155,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     }
 
     // Get the user's generations with pagination
-    const result: GenerationsResponseDTO = await getGenerations(supabase, session.user.id, validationResult.data);
+    const result: GenerationsResponseDTO = await getGenerations(supabase, userId, validationResult.data);
 
     // Return successful response
     return new Response(JSON.stringify(result), {
