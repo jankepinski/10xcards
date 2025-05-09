@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { FlashcardListItemViewModel, EditFlashcardFormData } from "../../types/viewModels";
-import type { Pagination, FlashcardsResponseDTO, DeleteResponseDTO, FlashcardDTO } from "../../types";
+import type { Pagination, FlashcardsResponseDTO, DeleteResponseDTO } from "../../types";
 import FlashcardListItem from "./FlashcardListItem";
 import EditFlashcardModal from "./EditFlashcardModal";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
@@ -34,9 +34,14 @@ const FlashcardListContainer = () => {
       if (!response.ok) {
         throw new Error(`Failed to fetch flashcards: ${response.statusText}`);
       }
-
       const data: FlashcardsResponseDTO = await response.json();
-      setFlashcards(data.flashcards);
+      // Convert the flashcard IDs from number to string to match the ViewModel type
+      setFlashcards(
+        data.flashcards.map((card) => ({
+          ...card,
+          id: String(card.id),
+        }))
+      );
       setPagination(data.pagination);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch flashcards");
@@ -69,8 +74,6 @@ const FlashcardListContainer = () => {
         }
         throw new Error(`Failed to update flashcard: ${response.statusText}`);
       }
-
-      const updatedFlashcard: FlashcardDTO = await response.json();
 
       // Update the local state with the updated flashcard
       setFlashcards((cards) => cards.map((card) => (card.id === flashcardId ? { ...card, ...data } : card)));
@@ -195,7 +198,7 @@ const FlashcardListContainer = () => {
   if (flashcards.length === 0) {
     return (
       <div className="text-center p-8 border rounded-lg bg-muted/50">
-        <h2 className="text-xl font-semibold mb-2">You don't have any flashcards yet</h2>
+        <h2 className="text-xl font-semibold mb-2">You don&apos;t have any flashcards yet</h2>
         <p className="text-muted-foreground mb-4">Create your first flashcard or generate them with AI.</p>
         {/* Placeholder for potential "Create flashcard" button if needed */}
       </div>
