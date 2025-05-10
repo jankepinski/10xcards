@@ -3,6 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { z } from "zod";
+
+// Define Zod schema for password recovery form
+const passwordRecoverySchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+});
+
+// Type for form values based on the schema
+type PasswordRecoveryFormValues = z.infer<typeof passwordRecoverySchema>;
 
 const PasswordRecoveryForm = () => {
   // Form state
@@ -14,12 +23,32 @@ const PasswordRecoveryForm = () => {
   // Form validation state
   const [emailError, setEmailError] = useState<string | null>(null);
 
-  // Validate email format
+  // Validate email with Zod
   const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const isValid = emailRegex.test(email);
-    setEmailError(isValid ? null : "Please enter a valid email address");
-    return isValid;
+    const result = passwordRecoverySchema.shape.email.safeParse(email);
+    if (!result.success) {
+      setEmailError(result.error.issues[0].message);
+      return false;
+    }
+    setEmailError(null);
+    return true;
+  };
+
+  // Validate entire form with Zod
+  const validateForm = (values: PasswordRecoveryFormValues): boolean => {
+    const result = passwordRecoverySchema.safeParse(values);
+    if (!result.success) {
+      const formattedErrors = result.error.format();
+
+      // Set field errors
+      setEmailError(formattedErrors.email?._errors[0] || null);
+
+      return false;
+    }
+
+    // Clear all errors if validation passes
+    setEmailError(null);
+    return true;
   };
 
   // Handle form submission
@@ -30,10 +59,11 @@ const PasswordRecoveryForm = () => {
     setError(null);
     setSuccess(false);
 
-    // Validate form
-    const isEmailValid = validateEmail(email);
+    // Validate form with Zod
+    const formValues = { email };
+    const isValid = validateForm(formValues);
 
-    if (!isEmailValid) {
+    if (!isValid) {
       return;
     }
 
@@ -50,7 +80,7 @@ const PasswordRecoveryForm = () => {
 
       // Show success message
       setSuccess(true);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Password recovery error:", error);
       setError("Failed to send recovery instructions. Please try again later.");
     } finally {

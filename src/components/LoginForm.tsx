@@ -4,6 +4,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { z } from "zod";
+
+// Define Zod schema for login form
+const loginSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
+// Type for form values based on the schema
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 const LoginForm = () => {
   // Form state
@@ -17,19 +27,45 @@ const LoginForm = () => {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  // Validate email format
+  // Validate email with Zod
   const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const isValid = emailRegex.test(email);
-    setEmailError(isValid ? null : "Please enter a valid email address");
-    return isValid;
+    const result = loginSchema.shape.email.safeParse(email);
+    if (!result.success) {
+      setEmailError(result.error.issues[0].message);
+      return false;
+    }
+    setEmailError(null);
+    return true;
   };
 
-  // Validate password (not empty)
+  // Validate password with Zod
   const validatePassword = (password: string): boolean => {
-    const isValid = password.trim().length > 0;
-    setPasswordError(isValid ? null : "Password is required");
-    return isValid;
+    const result = loginSchema.shape.password.safeParse(password);
+    if (!result.success) {
+      setPasswordError(result.error.issues[0].message);
+      return false;
+    }
+    setPasswordError(null);
+    return true;
+  };
+
+  // Validate entire form with Zod
+  const validateForm = (values: LoginFormValues): boolean => {
+    const result = loginSchema.safeParse(values);
+    if (!result.success) {
+      const formattedErrors = result.error.format();
+
+      // Set field errors
+      setEmailError(formattedErrors.email?._errors[0] || null);
+      setPasswordError(formattedErrors.password?._errors[0] || null);
+
+      return false;
+    }
+
+    // Clear all errors if validation passes
+    setEmailError(null);
+    setPasswordError(null);
+    return true;
   };
 
   // Handle form submission
@@ -39,11 +75,11 @@ const LoginForm = () => {
     // Reset error state
     setError(null);
 
-    // Validate form
-    const isEmailValid = validateEmail(email);
-    const isPasswordValid = validatePassword(password);
+    // Validate form with Zod
+    const formValues = { email, password };
+    const isValid = validateForm(formValues);
 
-    if (!isEmailValid || !isPasswordValid) {
+    if (!isValid) {
       return;
     }
 
@@ -56,8 +92,8 @@ const LoginForm = () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Note: In a real implementation, this would be replaced with actual API calls
-      console.log("Form submitted", { email, password });
-    } catch (error: any) {
+      console.log("Form submitted", formValues);
+    } catch (error: unknown) {
       console.error("Login error:", error);
       setError("Failed to login. Please check your credentials and try again.");
     } finally {

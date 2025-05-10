@@ -4,6 +4,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { z } from "zod";
+
+// Define the base Zod schema first before adding refinements
+const registerBaseSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required").min(8, "Password must be at least 8 characters long"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+});
+
+// Add the refinement for password matching
+const registerSchema = registerBaseSchema.refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+// Type for form values based on the schema
+type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const RegisterForm = () => {
   // Form state
@@ -20,38 +37,69 @@ const RegisterForm = () => {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
 
-  // Validate email format
+  // Validate email with Zod
   const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const isValid = emailRegex.test(email);
-    setEmailError(isValid ? null : "Please enter a valid email address");
-    return isValid;
-  };
-
-  // Validate password (length and complexity)
-  const validatePassword = (password: string): boolean => {
-    if (password.trim().length === 0) {
-      setPasswordError("Password is required");
+    const result = registerBaseSchema.shape.email.safeParse(email);
+    if (!result.success) {
+      setEmailError(result.error.issues[0].message);
       return false;
     }
-    if (password.length < 8) {
-      setPasswordError("Password must be at least 8 characters long");
+    setEmailError(null);
+    return true;
+  };
+
+  // Validate password with Zod
+  const validatePassword = (password: string): boolean => {
+    const result = registerBaseSchema.shape.password.safeParse(password);
+    if (!result.success) {
+      setPasswordError(result.error.issues[0].message);
       return false;
     }
     setPasswordError(null);
     return true;
   };
 
-  // Validate password confirmation
+  // Validate password confirmation with Zod
+  // This also needs to check if passwords match
   const validateConfirmPassword = (password: string, confirmPassword: string): boolean => {
-    if (confirmPassword.trim().length === 0) {
-      setConfirmPasswordError("Please confirm your password");
+    // First check if the confirm password field itself is valid
+    const baseResult = registerBaseSchema.shape.confirmPassword.safeParse(confirmPassword);
+    if (!baseResult.success) {
+      setConfirmPasswordError(baseResult.error.issues[0].message);
       return false;
     }
-    if (password !== confirmPassword) {
-      setConfirmPasswordError("Passwords do not match");
+
+    // Then check if passwords match using the refine validation
+    const matchResult = registerSchema.safeParse({ email, password, confirmPassword });
+    if (!matchResult.success) {
+      const errors = matchResult.error.format();
+      if (errors.confirmPassword?._errors.length) {
+        setConfirmPasswordError(errors.confirmPassword._errors[0]);
+        return false;
+      }
+    }
+
+    setConfirmPasswordError(null);
+    return true;
+  };
+
+  // Validate entire form with Zod
+  const validateForm = (values: RegisterFormValues): boolean => {
+    const result = registerSchema.safeParse(values);
+    if (!result.success) {
+      const formattedErrors = result.error.format();
+
+      // Set field errors
+      setEmailError(formattedErrors.email?._errors[0] || null);
+      setPasswordError(formattedErrors.password?._errors[0] || null);
+      setConfirmPasswordError(formattedErrors.confirmPassword?._errors[0] || null);
+
       return false;
     }
+
+    // Clear all errors if validation passes
+    setEmailError(null);
+    setPasswordError(null);
     setConfirmPasswordError(null);
     return true;
   };
@@ -63,12 +111,11 @@ const RegisterForm = () => {
     // Reset error state
     setError(null);
 
-    // Validate form
-    const isEmailValid = validateEmail(email);
-    const isPasswordValid = validatePassword(password);
-    const isConfirmPasswordValid = validateConfirmPassword(password, confirmPassword);
+    // Validate form with Zod
+    const formValues = { email, password, confirmPassword };
+    const isValid = validateForm(formValues);
 
-    if (!isEmailValid || !isPasswordValid || !isConfirmPasswordValid) {
+    if (!isValid) {
       return;
     }
 
@@ -82,7 +129,7 @@ const RegisterForm = () => {
 
       // Note: In a real implementation, this would be replaced with actual API calls
       console.log("Registration submitted", { email, password });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Registration error:", error);
       setError("Failed to create account. Please try again later.");
     } finally {
