@@ -8,6 +8,7 @@ import type {
 } from "../../types";
 import crypto from "crypto";
 import type { PaginationParams } from "../schemas/generationSchemas";
+import { OpenRouterService, OpenRouterServiceError } from "../openrouter.service";
 
 /**
  * Calculates the SHA-256 hash of the provided text
@@ -21,32 +22,97 @@ const calculateTextHash = (text: string): string => {
  */
 export const generateFlashcardsFromAI = async (sourceText: string): Promise<FlashcardDTO[]> => {
   try {
-    // TODO: Implement actual OpenRouter.ai integration
-    // This is a placeholder implementation that returns mock data
-
-    // For demonstration purposes, use the sourceText length to vary the response
-    const flashcardCount = Math.min(5, Math.max(2, Math.floor(sourceText.length / 500)));
-
-    // Mock implementation for testing - will be replaced with actual AI call
-    const mockFlashcards: FlashcardDTO[] = [];
-
-    // Generate the requested number of flashcards
-    for (let i = 0; i < flashcardCount; i++) {
-      mockFlashcards.push({
-        id: i + 1,
-        user_id: "placeholder-user-id",
-        front: `Sample front text ${i + 1}`,
-        back: `Sample back text ${i + 1}`,
-        source: "ai-full",
-        generation_id: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
+    if (!import.meta.env.OPENROUTER_API_KEY) {
+      throw new Error("OpenRouter API key is not configured");
     }
 
-    return mockFlashcards;
+    // Create OpenRouter service instance with a configuration for flashcard generation
+    const openRouterService = new OpenRouterService(import.meta.env.OPENROUTER_API_KEY, {
+      systemMessage: `You are an educational assistant specialized in creating flashcards from text. 
+Create a comprehensive set of flashcards based on the provided text. 
+Each flashcard should have a front side with a concise question or term, and a back side with a complete explanation or definition.
+The front side should be under 200 characters, and the back side should be under 500 characters.
+Focus on key concepts, important terminology, and fundamental ideas in the text.
+
+Your response must be in valid JSON format with this structure:
+{
+  "flashcards": [
+    {
+      "front": "Question or term",
+      "back": "Answer or definition"
+    },
+    ...more flashcards
+  ]
+}`,
+      modelName: "openai/gpt-4o-mini",
+      modelParams: {
+        temperature: 0.3,
+        max_tokens: 2000,
+        top_p: 0.95,
+      },
+      responseFormat: {
+        type: "json_object",
+      },
+    });
+
+    // Send the request to OpenRouter
+    const response = await openRouterService.sendRequest(sourceText);
+
+    // Handle different possible response formats
+    let flashcardsData;
+
+    try {
+      // If we got a direct response object with flashcards
+      if (response.flashcards && Array.isArray(response.flashcards)) {
+        flashcardsData = response;
+      }
+      // If the response came as content string (common with some providers)
+      else if (response.content && typeof response.content === "string") {
+        const parsed = JSON.parse(response.content);
+        flashcardsData = parsed;
+      }
+      // If the response is nested in a choices array (standard OpenAI format)
+      else if (response.choices && Array.isArray(response.choices) && response.choices.length > 0) {
+        const message = response.choices[0].message;
+        if (message && typeof message.content === "string") {
+          flashcardsData = JSON.parse(message.content);
+        } else if (message && message.content && message.content.flashcards) {
+          flashcardsData = message.content;
+        }
+      }
+
+      // Fallback for other response structures
+      if (!flashcardsData || !flashcardsData.flashcards || !Array.isArray(flashcardsData.flashcards)) {
+        console.error("Unexpected response structure:", JSON.stringify(response));
+        throw new Error("Could not extract flashcards from the API response");
+      }
+    } catch (parseError) {
+      console.error("Failed to parse response from OpenRouter:", parseError, response);
+      throw new Error("Failed to parse the AI response into valid flashcards");
+    }
+
+    // Map the response to FlashcardDTO objects
+    const flashcards: FlashcardDTO[] = flashcardsData.flashcards.map(
+      (card: { front: string; back: string }, index: number) => ({
+        id: index + 1, // Temporary ID for the response
+        user_id: "placeholder-user-id", // Will be replaced with actual user ID
+        front: card.front,
+        back: card.back,
+        source: "ai-full",
+        generation_id: null, // Will be set after generation is saved
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+    );
+
+    return flashcards;
   } catch (error) {
     console.error("Error generating flashcards from AI:", error);
+
+    if (error instanceof OpenRouterServiceError) {
+      throw new Error(`OpenRouter error (${error.code}): ${error.message}`);
+    }
+
     // This will be handled by the caller
     throw error;
   }
@@ -65,6 +131,7 @@ export const createGeneration = async (
   const sourceTextLength = command.source_text.length;
 
   const startTime = Date.now();
+  const modelUsed = "gpt-4"; // Default model
 
   try {
     // Call the AI service to generate flashcards
@@ -79,9 +146,11 @@ export const createGeneration = async (
         user_id: userId,
         source_text_hash: sourceTextHash,
         source_text_length: sourceTextLength,
-        model: "gpt-4", // Placeholder - should be returned from the AI service
+        model: modelUsed,
         generation_duration: processingTimeMs,
         generated_count: generatedFlashcards.length,
+        accepted_unedited_count: 0, // These will be updated when user accepts flashcards
+        accepted_edited_count: 0,
       })
       .select()
       .single();
@@ -90,9 +159,16 @@ export const createGeneration = async (
       throw generationError;
     }
 
+    // Update the generation_id on all flashcards
+    const flashcardsWithGenerationId = generatedFlashcards.map((card) => ({
+      ...card,
+      generation_id: generationData.id,
+      user_id: userId,
+    }));
+
     return {
       generation: generationData as GenerationDTO,
-      flashcards: generatedFlashcards,
+      flashcards: flashcardsWithGenerationId,
     };
   } catch (error) {
     // Log the error to the generation_error_logs table
@@ -100,7 +176,7 @@ export const createGeneration = async (
       user_id: userId,
       error_code: "GENERATION_FAILED",
       error_message: error instanceof Error ? error.message : String(error),
-      model: "gpt-4", // Using the same model as in the generation record
+      model: modelUsed,
       source_text_hash: sourceTextHash,
       source_text_length: sourceTextLength,
     });
