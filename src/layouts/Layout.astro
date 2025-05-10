@@ -1,12 +1,41 @@
 ---
 import "../styles/global.css";
 import ToastProvider from "../components/ui/toast-provider";
+import UserMenu from "../components/UserMenu";
+import { supabaseClient } from "../db/supabase.client";
 
 interface Props {
   title?: string;
 }
 
 const { title = "10x Astro Starter" } = Astro.props;
+
+// Pobieramy tokeny sesji z ciasteczek
+const accessToken = Astro.cookies.get("sb-access-token")?.value;
+const refreshToken = Astro.cookies.get("sb-refresh-token")?.value;
+
+// Inicjalizacja zmiennych stanu
+let user = Astro.locals.user;
+let session = Astro.locals.session;
+let isLoggedIn = !!session;
+
+// Jeśli mamy tokeny, ale nie mamy sesji w locals, próbujemy ustawić sesję
+if (accessToken && refreshToken && !session) {
+  try {
+    const { data, error } = await supabaseClient.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+
+    if (!error) {
+      user = data.user;
+      session = data.session;
+      isLoggedIn = !!session;
+    }
+  } catch (error) {
+    console.error("Error setting session:", error);
+  }
+}
 ---
 
 <!doctype html>
@@ -19,7 +48,42 @@ const { title = "10x Astro Starter" } = Astro.props;
     <title>{title}</title>
   </head>
   <body>
-    <slot />
+    <header class="sticky top-0 z-40 w-full border-b bg-background">
+      <div class="container mx-auto flex h-16 items-center justify-between">
+        <div class="flex items-center gap-2">
+          <a href="/" class="font-bold text-xl">10x Cards</a>
+        </div>
+        <nav class="flex items-center gap-4">
+          {
+            isLoggedIn ? (
+              <UserMenu client:load email={user?.email || ""} />
+            ) : (
+              <div class="flex items-center gap-2">
+                <a href="/login" class="text-sm font-medium hover:underline">
+                  Login
+                </a>
+                <a href="/register" class="text-sm font-medium hover:underline">
+                  Register
+                </a>
+              </div>
+            )
+          }
+        </nav>
+      </div>
+    </header>
+
+    <main class="flex-1 py-6">
+      <slot />
+    </main>
+
+    <footer class="py-4 border-t">
+      <div class="container mx-auto">
+        <p class="text-center text-sm text-muted-foreground">
+          &copy; {new Date().getFullYear()} 10x Cards. All rights reserved.
+        </p>
+      </div>
+    </footer>
+
     <ToastProvider client:load />
   </body>
 </html>
@@ -30,5 +94,15 @@ const { title = "10x Astro Starter" } = Astro.props;
     margin: 0;
     width: 100%;
     height: 100%;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  main {
+    flex: 1;
   }
 </style>

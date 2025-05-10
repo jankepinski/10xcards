@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { z } from "zod";
+import { useNavigate } from "@/lib/hooks/useNavigate";
 
 // Define Zod schema for login form
 const loginSchema = z.object({
@@ -22,6 +23,7 @@ const LoginForm = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // Form validation state
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -83,19 +85,35 @@ const LoginForm = () => {
       return;
     }
 
-    // Simulate form submission
+    // Begin login process
     setIsLoading(true);
 
     try {
-      // Here would be the actual login implementation
-      // For now, we'll just simulate a delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Call login API
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formValues),
+      });
 
-      // Note: In a real implementation, this would be replaced with actual API calls
-      console.log("Form submitted", formValues);
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle authentication errors
+        setError(data.error || "Failed to login. Please check your credentials and try again.");
+        return;
+      }
+
+      if (data.success) {
+        navigate("/generate-flashcards");
+      } else {
+        setError(data.error || "An unexpected error occurred.");
+      }
     } catch (error: unknown) {
       console.error("Login error:", error);
-      setError("Failed to login. Please check your credentials and try again.");
+      setError("Failed to login. Please check your connection and try again.");
     } finally {
       setIsLoading(false);
     }

@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import { createGenerationSchema, paginationSchema } from "../../lib/schemas/generationSchemas";
 import { createGeneration, getGenerations } from "../../lib/services/generationService";
 import type { CreateGenerationCommand, GenerationResultDTO, GenerationsResponseDTO } from "../../types";
-// import type { Session } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 
 export const prerender = false;
 
@@ -18,23 +18,25 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const { supabase } = locals;
 
   // AUTHENTICATION DISABLED
-  // const { data } = await supabase.auth.getSession();
-  // const session: Session | null = data.session;
+  const { data } = await supabase.auth.getUser();
+  const user: User | null = data.user;
 
-  // if (!session) {
-  //   return new Response(
-  //     JSON.stringify({
-  //       error: "Unauthorized",
-  //       message: "You must be logged in to use this endpoint",
-  //     }),
-  //     {
-  //       status: 401,
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //     }
-  //   );
-  // }
+  if (!user) {
+    return new Response(
+      JSON.stringify({
+        error: "Unauthorized",
+        message: "You must be logged in to use this endpoint",
+      }),
+      {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+
+  console.log("User:", user);
 
   // Use fixed user ID
   const userId = "5fbd38b3-8a86-4a1e-b6c3-af939d007330";

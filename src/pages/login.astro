@@ -1,6 +1,14 @@
 ---
 import AuthLayout from "../layouts/AuthLayout.astro";
 import LoginForm from "../components/LoginForm";
+
+// Sprawdzenie czy użytkownik jest już zalogowany
+const { session } = Astro.locals;
+
+// Jeśli użytkownik jest zalogowany, przekieruj go na stronę dashboard
+if (session) {
+  return Astro.redirect("/generate-flashcards");
+}
 ---
 
 <AuthLayout title="Login - 10x Cards">
