@@ -24,7 +24,7 @@ export async function GET(context: APIContext): Promise<Response> {
     // const userId = session.user.id;
 
     // Use fixed user ID
-    const userId = "036b9386-6c46-4f39-9a1a-5f4cb5418ebb";
+    const userId = "5fbd38b3-8a86-4a1e-b6c3-af939d007330";
 
     // Step 2: Query generation_error_logs using the service
     const { data: errorLogs, error } = await getUserGenerationErrorLogs(supabase, userId);
