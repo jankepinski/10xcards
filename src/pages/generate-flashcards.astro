@@ -2,8 +2,13 @@
 import Layout from "../layouts/Layout.astro";
 import FlashcardGenerator from "@/components/FlashcardGenerator";
 
-// Skip authentication for now as requested
-// In production, would add authentication check here
+// Check if user is authenticated
+const { session } = Astro.locals;
+
+// Redirect to login if user is not authenticated
+if (!session) {
+  return Astro.redirect("/login");
+}
 
 const title = "Generate Flashcards";
 ---

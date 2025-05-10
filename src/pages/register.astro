@@ -1,6 +1,14 @@
 ---
 import AuthLayout from "../layouts/AuthLayout.astro";
 import RegisterForm from "../components/RegisterForm";
+
+// Check if user is already logged in
+const { session } = Astro.locals;
+
+// If the user is already logged in, redirect to the dashboard
+if (session) {
+  return Astro.redirect("/generate-flashcards");
+}
 ---
 
 <AuthLayout title="Register - 10x Cards">

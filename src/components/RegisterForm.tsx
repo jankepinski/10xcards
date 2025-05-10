@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { z } from "zod";
+import { useNavigate } from "@/lib/hooks/useNavigate";
 
 // Define the base Zod schema first before adding refinements
 const registerBaseSchema = z.object({
@@ -31,6 +32,7 @@ const RegisterForm = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // Form validation state
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -119,19 +121,36 @@ const RegisterForm = () => {
       return;
     }
 
-    // Simulate form submission
+    // Show loading state
     setIsLoading(true);
 
     try {
-      // Here would be the actual registration implementation
-      // For now, we'll just simulate a delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Send registration data to the API
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      // Note: In a real implementation, this would be replaced with actual API calls
-      console.log("Registration submitted", { email, password });
-    } catch (error: unknown) {
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle registration error
+        setError(data.error || "Registration failed. Please try again.");
+        return;
+      }
+
+      if (data.success) {
+        // Registration successful - redirect to the flashcards generation page
+        navigate("/generate-flashcards");
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
+    } catch (error) {
       console.error("Registration error:", error);
-      setError("Failed to create account. Please try again later.");
+      setError("Failed to connect to the server. Please check your connection and try again.");
     } finally {
       setIsLoading(false);
     }

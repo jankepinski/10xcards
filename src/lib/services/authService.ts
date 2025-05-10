@@ -6,6 +6,11 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface RegisterCredentials {
+  email: string;
+  password: string;
+}
+
 export interface AuthResponse {
   user: User | null;
   session: Session | null;
@@ -13,6 +18,31 @@ export interface AuthResponse {
 }
 
 export const authService = {
+  /**
+   * Registers a new user using Supabase Auth
+   */
+  async register(credentials: RegisterCredentials): Promise<AuthResponse> {
+    try {
+      const { data, error } = await supabaseClient.auth.signUp({
+        email: credentials.email,
+        password: credentials.password,
+      });
+
+      return {
+        user: data?.user || null,
+        session: data?.session || null,
+        error,
+      };
+    } catch (err) {
+      console.error("Registration error:", err);
+      return {
+        user: null,
+        session: null,
+        error: err as AuthError,
+      };
+    }
+  },
+
   /**
    * Loguje użytkownika używając Supabase Auth
    */
