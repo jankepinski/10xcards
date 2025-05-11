@@ -19,6 +19,7 @@
 - **Frontend:** Astro 5, React 19, TypeScript 5, Tailwind CSS 4, Shadcn/ui
 - **Backend:** Supabase for user management and data storage
 - **AI Integration:** Openrouter.ai for accessing various LLMs
+- **Testing:** Vitest, React Testing Library for unit tests; Cypress/Playwright for E2E tests
 - **CI/CD & Hosting:** GitHub Actions and DigitalOcean
 - **Tooling:** ESLint and Prettier for maintaining code quality
 
@@ -53,6 +54,8 @@ The application should now be accessible at [http://localhost:3000](http://local
 - **`npm run build`**: Builds the application for production.
 - **`npm run preview`**: Serves the production build locally.
 - **`npm run astro`**: Runs Astro CLI commands.
+- **`npm run test`**: Runs Vitest unit tests.
+- **`npm run test:e2e`**: Runs E2E tests with Cypress/Playwright.
 - **`npm run lint`**: Lints the codebase using ESLint.
 - **`npm run lint:fix`**: Automatically fixes linting issues.
 - **`npm run format`**: Formats the codebase using Prettier.
