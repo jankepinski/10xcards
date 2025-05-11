@@ -1,0 +1,18 @@
+---
+import AuthLayout from "../layouts/AuthLayout.astro";
+import LoginForm from "../components/auth/LoginForm";
+
+// This would normally come from server-side processing or API
+const isLoading = false;
+const error = null;
+
+// Temporary function until backend is implemented
+const handleLogin = (email: string, password: string) => {
+  console.log("Login attempted with:", email, password);
+  // Backend implementation will be added later
+};
+---
+
+<AuthLayout title="Login">
+  <LoginForm client:load onSubmit={handleLogin} isLoading={isLoading} error={error} />
+</AuthLayout>
