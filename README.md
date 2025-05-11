@@ -46,6 +46,8 @@
    npm run dev
    ```
 
+Remember to setup .env variables!
+
 The application should now be accessible at [http://localhost:3000](http://localhost:3000).
 
 ## Available Scripts
