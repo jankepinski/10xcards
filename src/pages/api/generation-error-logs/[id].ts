@@ -20,21 +20,20 @@ export const GET: APIRoute = async ({ params, locals }) => {
   // Get Supabase client from locals
   const { supabase } = locals;
 
-  // AUTHENTICATION DISABLED
-  // Get the session from Supabase client
-  // const { data } = await supabase.auth.getSession();
-  // const session: Session | null = data.session;
+  // Get the current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Ensure user is authenticated
-  // if (!session) {
-  //   return new Response(JSON.stringify({ error: "Unauthorized - Please log in to access error logs" }), {
-  //     status: 401,
-  //     headers: { "Content-Type": "application/json" },
-  //   });
-  // }
+  if (!user) {
+    return new Response(JSON.stringify({ error: "Unauthorized - Please log in to access error logs" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
-  // Use fixed user ID
-  const userId = "036b9386-6c46-4f39-9a1a-5f4cb5418ebb";
+  const userId = user.id;
 
   try {
     // Validate the ID parameter

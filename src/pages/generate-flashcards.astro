@@ -1,5 +1,5 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import MainLayout from "../layouts/MainLayout.astro";
 import FlashcardGenerator from "@/components/FlashcardGenerator";
 
 // Skip authentication for now as requested
@@ -8,12 +8,12 @@ import FlashcardGenerator from "@/components/FlashcardGenerator";
 const title = "Generate Flashcards";
 ---
 
-<Layout title={title}>
+<MainLayout title={title}>
   <main class="container mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold mb-6">{title}</h1>
     <FlashcardGenerator client:load />
   </main>
-</Layout>
+</MainLayout>
 
 <style>
   main {

@@ -1,14 +1,10 @@
 ---
-import { ViewTransitions } from "astro:transitions";
-import { Toaster } from "@/components/ui/sonner";
 import "../styles/global.css";
-
 interface Props {
   title: string;
-  description?: string;
 }
 
-const { title, description = "10x Cards - Enhance your learning with AI-powered flashcards" } = Astro.props;
+const { title } = Astro.props;
 ---
 
 <!doctype html>
@@ -16,40 +12,30 @@ const { title, description = "10x Cards - Enhance your learning with AI-powered 
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content={description} />
     <title>{title} | 10x Cards</title>
+    <meta name="description" content="Learn faster with AI-powered flashcards" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <ViewTransitions />
   </head>
-  <body class="bg-background min-h-screen flex flex-col">
-    <!-- Toast Provider -->
-    <Toaster position="top-right" client:load />
-
-    <!-- Auth Header -->
-    <header class="py-4 border-b">
-      <div class="container mx-auto flex justify-center">
-        <a href="/" class="flex items-center space-x-2">
-          <span class="font-bold text-xl">10x Cards</span>
-        </a>
-      </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="flex-1 py-12">
-      <div class="container mx-auto">
-        <div class="max-w-md mx-auto w-full">
-          <slot />
+  <body>
+    <div class="min-h-screen flex flex-col">
+      <header class="border-b py-4">
+        <div class="container mx-auto px-4">
+          <a href="/" class="text-2xl font-bold">10x Cards</a>
         </div>
-      </div>
-    </main>
-
-    <!-- Auth Footer -->
-    <footer class="py-6 border-t">
-      <div class="container mx-auto">
-        <div class="text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} 10x Cards. All rights reserved.</p>
+      </header>
+      <main class="flex-1 flex items-center justify-center py-12">
+        <div class="w-full max-w-md px-4">
+          <div class="bg-card p-8 rounded-lg shadow border">
+            <h1 class="text-2xl font-bold mb-6 text-center">{title}</h1>
+            <slot />
+          </div>
         </div>
-      </div>
-    </footer>
+      </main>
+      <footer class="py-6 border-t">
+        <div class="container mx-auto px-4 text-center text-muted-foreground text-sm">
+          &copy; {new Date().getFullYear()} 10x Cards. All rights reserved.
+        </div>
+      </footer>
+    </div>
   </body>
 </html>

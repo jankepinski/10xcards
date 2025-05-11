@@ -1,11 +1,11 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import MainLayout from "../layouts/MainLayout.astro";
 import FlashcardListContainer from "../components/my-flashcards/FlashcardListContainer";
 ---
 
-<Layout title="My Flashcards - 10x Cards">
+<MainLayout title="My Flashcards - 10x Cards">
   <main class="container mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold mb-6">My Flashcards</h1>
     <FlashcardListContainer client:visible />
   </main>
-</Layout>
+</MainLayout>

@@ -6,19 +6,29 @@ import { useState } from "react";
 import { Link } from "@/components/ui/link";
 
 interface RegisterFormProps {
-  onSubmit: (email: string, password: string, confirmPassword: string) => void;
-  isLoading: boolean;
-  error: string | null;
+  onSubmit?: (email: string, password: string, confirmPassword: string) => void;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
-const RegisterForm = ({ onSubmit, isLoading, error }: RegisterFormProps) => {
+const RegisterForm = ({
+  onSubmit,
+  isLoading: initialLoading = false,
+  error: initialError = null,
+}: RegisterFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(initialLoading);
+  const [error, setError] = useState<string | null>(initialError);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setValidationError(null);
+    setError(null);
+    setSuccess(null);
 
     // Basic validation
     if (!email.trim()) {
@@ -46,8 +56,46 @@ const RegisterForm = ({ onSubmit, isLoading, error }: RegisterFormProps) => {
       return;
     }
 
-    setValidationError(null);
-    onSubmit(email, password, confirmPassword);
+    // If onSubmit prop exists, use it (for testing or custom handling)
+    if (onSubmit) {
+      onSubmit(email, password, confirmPassword);
+      return;
+    }
+
+    // Otherwise, submit to the API endpoint
+    try {
+      setIsLoading(true);
+
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password, confirmPassword }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Registration failed. Please try again.");
+        return;
+      }
+
+      // Success - handle redirection or display success message
+      setSuccess(data.message || "Account created successfully!");
+
+      // Redirect to the specified page after a short delay
+      if (data.redirectTo) {
+        setTimeout(() => {
+          window.location.href = data.redirectTo;
+        }, 1500);
+      }
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.");
+      console.error("Registration error:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -58,6 +106,12 @@ const RegisterForm = ({ onSubmit, isLoading, error }: RegisterFormProps) => {
         {(error || validationError) && (
           <Alert variant="destructive" className="mb-2">
             <AlertDescription>{error || validationError}</AlertDescription>
+          </Alert>
+        )}
+
+        {success && (
+          <Alert className="mb-2 bg-green-50 text-green-800 border-green-200">
+            <AlertDescription>{success}</AlertDescription>
           </Alert>
         )}
 

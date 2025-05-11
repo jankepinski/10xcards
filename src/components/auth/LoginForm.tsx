@@ -4,20 +4,22 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useState } from "react";
 import { Link } from "@/components/ui/link";
+import { toast } from "sonner";
 
 interface LoginFormProps {
-  onSubmit: (email: string, password: string) => void;
-  isLoading: boolean;
-  error: string | null;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
-const LoginForm = ({ onSubmit, isLoading, error }: LoginFormProps) => {
+const LoginForm = ({ isLoading: initialIsLoading = false, error: initialError = null }: LoginFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(initialError);
+  const [isLoading, setIsLoading] = useState(initialIsLoading);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setValidationError(null);
 
     // Basic validation
     if (!email.trim()) {
@@ -35,8 +37,42 @@ const LoginForm = ({ onSubmit, isLoading, error }: LoginFormProps) => {
       return;
     }
 
-    setValidationError(null);
-    onSubmit(email, password);
+    try {
+      setIsLoading(true);
+
+      // Wywołanie endpointu API do logowania
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setValidationError(data.error || "Failed to login. Please check your credentials.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Sukces - sprawdź czy mamy przekierowanie
+      if (data.success && data.redirectTo) {
+        toast.success("Login successful!");
+        // Przekieruj na stronę docelową
+        window.location.href = data.redirectTo;
+        return;
+      }
+
+      // Pomyślne logowanie ale bez przekierowania
+      toast.success("Login successful!");
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Login error:", error);
+      setValidationError("An unexpected error occurred. Please try again later.");
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -44,9 +80,9 @@ const LoginForm = ({ onSubmit, isLoading, error }: LoginFormProps) => {
       <h1 className="text-2xl font-bold mb-6 text-center">Login to Your Account</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {(error || validationError) && (
+        {validationError && (
           <Alert variant="destructive" className="mb-2">
-            <AlertDescription>{error || validationError}</AlertDescription>
+            <AlertDescription>{validationError}</AlertDescription>
           </Alert>
         )}
 
@@ -104,7 +140,7 @@ const LoginForm = ({ onSubmit, isLoading, error }: LoginFormProps) => {
       </form>
 
       <div className="mt-6 text-center text-sm">
-        Don't have an account?{" "}
+        Don&apos;t have an account?{" "}
         <Link href="/register" className="text-primary hover:underline">
           Register here
         </Link>

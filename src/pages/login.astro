@@ -2,17 +2,25 @@
 import AuthLayout from "../layouts/AuthLayout.astro";
 import LoginForm from "../components/auth/LoginForm";
 
-// This would normally come from server-side processing or API
+// Inicjalizacja parametrów początkowych
 const isLoading = false;
 const error = null;
 
-// Temporary function until backend is implemented
-const handleLogin = (email: string, password: string) => {
-  console.log("Login attempted with:", email, password);
-  // Backend implementation will be added later
-};
+// Sprawdzanie, czy użytkownik jest już zalogowany
+const { locals, redirect } = Astro;
+const {
+  data: { user },
+} = await locals.supabase.auth.getUser();
+
+// Jeżeli użytkownik jest już zalogowany, przekieruj na stronę główną
+if (user) {
+  return redirect("/generate-flashcards");
+}
+
+// Strona nie jest prerenderowana, aby middleware mogło działać
+export const prerender = false;
 ---
 
 <AuthLayout title="Login">
-  <LoginForm client:load onSubmit={handleLogin} isLoading={isLoading} error={error} />
+  <LoginForm client:load isLoading={isLoading} error={error} />
 </AuthLayout>

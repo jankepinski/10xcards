@@ -1,11 +1,14 @@
 ---
-import PublicLayout from "../layouts/PublicLayout.astro";
+import MainLayout from "../layouts/MainLayout.astro";
 import { Button } from "@/components/ui/button";
+
+// Strona nie jest prerenderowana, aby middleware mogło działać
+export const prerender = false;
 ---
 
-<PublicLayout title="Home">
+<MainLayout title="Home">
   <section class="py-20">
-    <div class="text-center max-w-3xl mx-auto px-4">
+    <div class="container mx-auto px-4 text-center max-w-3xl">
       <h1 class="text-4xl font-extrabold tracking-tight lg:text-5xl mb-6">Learn Faster with AI-Powered Flashcards</h1>
       <p class="text-xl text-muted-foreground mb-8">
         Transform any text into effective flashcards in seconds. Boost your learning and memory retention with 10x
@@ -23,13 +26,13 @@ import { Button } from "@/components/ui/button";
   </section>
 
   <section class="py-16 bg-muted/50">
-    <div class="container">
+    <div class="container mx-auto px-4">
       <h2 class="text-3xl font-bold text-center mb-12">How It Works</h2>
 
       <div class="grid md:grid-cols-3 gap-8">
-        <div class="bg-card p-6 rounded-lg shadow-sm">
+        <div class="bg-card p-6 rounded-lg shadow-sm text-center">
           <div
-            class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary font-bold"
+            class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary font-bold mx-auto"
           >
             1
           </div>
@@ -37,9 +40,9 @@ import { Button } from "@/components/ui/button";
           <p class="text-muted-foreground">Simply paste any learning material you want to study.</p>
         </div>
 
-        <div class="bg-card p-6 rounded-lg shadow-sm">
+        <div class="bg-card p-6 rounded-lg shadow-sm text-center">
           <div
-            class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary font-bold"
+            class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary font-bold mx-auto"
           >
             2
           </div>
@@ -47,9 +50,9 @@ import { Button } from "@/components/ui/button";
           <p class="text-muted-foreground">Our AI analyzes your text and creates optimized flashcards automatically.</p>
         </div>
 
-        <div class="bg-card p-6 rounded-lg shadow-sm">
+        <div class="bg-card p-6 rounded-lg shadow-sm text-center">
           <div
-            class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary font-bold"
+            class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary font-bold mx-auto"
           >
             3
           </div>
@@ -61,7 +64,7 @@ import { Button } from "@/components/ui/button";
   </section>
 
   <section class="py-20">
-    <div class="container text-center">
+    <div class="container mx-auto px-4 text-center">
       <h2 class="text-3xl font-bold mb-6">Ready to enhance your learning?</h2>
       <p class="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
         Join thousands of students and professionals who use 10x Cards to learn more effectively.
@@ -71,4 +74,4 @@ import { Button } from "@/components/ui/button";
       </Button>
     </div>
   </section>
-</PublicLayout>
+</MainLayout>

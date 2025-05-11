@@ -16,26 +16,26 @@ export const GET: APIRoute = async ({ request, locals }) => {
   // Get Supabase client from locals
   const { supabase } = locals;
 
-  // AUTHENTICATION DISABLED
-  // Get the session from Supabase client
-  // const { data } = await supabase.auth.getSession();
-  // const session: Session | null = data.session;
+  // Get the current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Validate authentication
-  // if (!session) {
-  //   return new Response(
-  //     JSON.stringify({
-  //       error: "Unauthorized",
-  //       message: "You must be logged in to use this endpoint",
-  //     }),
-  //     {
-  //       status: 401,
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //     }
-  //   );
-  // }
+  if (!user) {
+    return new Response(
+      JSON.stringify({
+        error: "Unauthorized",
+        message: "You must be logged in to use this endpoint",
+      }),
+      {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
 
   try {
     // Get URL to parse query parameters
@@ -129,29 +129,29 @@ export const POST: APIRoute = async ({ request, locals }) => {
   // Get Supabase client from locals
   const { supabase } = locals;
 
-  // AUTHENTICATION DISABLED
-  // Get the session from Supabase client
-  // const { data } = await supabase.auth.getSession();
-  // const session: Session | null = data.session;
+  // Get the current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Validate authentication
-  // if (!session) {
-  //   return new Response(
-  //     JSON.stringify({
-  //       error: "Unauthorized",
-  //       message: "You must be logged in to use this endpoint",
-  //     }),
-  //     {
-  //       status: 401,
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //     }
-  //   );
-  // }
+  if (!user) {
+    return new Response(
+      JSON.stringify({
+        error: "Unauthorized",
+        message: "You must be logged in to use this endpoint",
+      }),
+      {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
 
-  // Use fixed user ID
-  const userId = "036b9386-6c46-4f39-9a1a-5f4cb5418ebb";
+  // Get authenticated user ID
+  const userId = user.id;
 
   try {
     // Parse and validate the request body
