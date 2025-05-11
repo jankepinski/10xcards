@@ -1,5 +1,3 @@
-import type { FlashcardDTO, Pagination } from "../types";
-
 /**
  * View model for a flashcard list item.
  * Contains only the fields needed for display in the list.

@@ -28,6 +28,8 @@ const GeneratedFlashcardItem = ({ flashcard, index, onUpdateStatus, onUpdateCont
   // Validate when inputs change
   useEffect(() => {
     validateContent();
+    // eslint-disable-next-line react-compiler/react-compiler
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [frontEdit, backEdit]);
 
   // Validate content without setting state during render

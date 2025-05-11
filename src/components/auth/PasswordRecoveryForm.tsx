@@ -54,7 +54,9 @@ const PasswordRecoveryForm = ({ onSubmit, isLoading, error, success }: PasswordR
             />
           </svg>
           <h1 className="text-2xl font-bold mb-2">Recovery Email Sent</h1>
-          <p className="mb-4">If an account exists with this email, we've sent instructions to reset your password.</p>
+          <p className="mb-4">
+            If an account exists with this email, we&apos;ve sent instructions to reset your password.
+          </p>
           <Link href="/login" className="text-primary hover:underline">
             Back to Login
           </Link>

@@ -166,6 +166,8 @@ const FlashcardListContainer = () => {
   // Initial fetch on component mount
   useEffect(() => {
     fetchFlashcards();
+    // eslint-disable-next-line react-compiler/react-compiler
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Render loading state
