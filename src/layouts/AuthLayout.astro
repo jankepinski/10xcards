@@ -1,0 +1,41 @@
+---
+import "../styles/global.css";
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} | 10x Cards</title>
+    <meta name="description" content="Learn faster with AI-powered flashcards" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <div class="min-h-screen flex flex-col">
+      <header class="border-b py-4">
+        <div class="container mx-auto px-4">
+          <a href="/" class="text-2xl font-bold">10x Cards</a>
+        </div>
+      </header>
+      <main class="flex-1 flex items-center justify-center py-12">
+        <div class="w-full max-w-md px-4">
+          <div class="bg-card p-8 rounded-lg shadow border">
+            <h1 class="text-2xl font-bold mb-6 text-center">{title}</h1>
+            <slot />
+          </div>
+        </div>
+      </main>
+      <footer class="py-6 border-t">
+        <div class="container mx-auto px-4 text-center text-muted-foreground text-sm">
+          &copy; {new Date().getFullYear()} 10x Cards. All rights reserved.
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

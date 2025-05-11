@@ -9,22 +9,19 @@ export async function GET(context: APIContext): Promise<Response> {
     // Step 1: Verify user authentication
     const supabase = context.locals.supabase;
 
-    // AUTHENTICATION DISABLED
-    // const {
-    //   data: { session },
-    // } = await supabase.auth.getSession();
+    // Get the current user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    // if (!session) {
-    //   return new Response(JSON.stringify({ error: "Unauthorized - Please log in to access error logs" }), {
-    //     status: 401,
-    //     headers: { "Content-Type": "application/json" },
-    //   });
-    // }
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Unauthorized - Please log in to access error logs" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
-    // const userId = session.user.id;
-
-    // Use fixed user ID
-    const userId = "036b9386-6c46-4f39-9a1a-5f4cb5418ebb";
+    const userId = user.id;
 
     // Step 2: Query generation_error_logs using the service
     const { data: errorLogs, error } = await getUserGenerationErrorLogs(supabase, userId);

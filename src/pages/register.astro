@@ -1,0 +1,11 @@
+---
+import AuthLayout from "../layouts/AuthLayout.astro";
+import RegisterForm from "../components/auth/RegisterForm";
+
+// Strona nie jest prerenderowana, aby middleware mogło działać
+export const prerender = false;
+---
+
+<AuthLayout title="Create Account">
+  <RegisterForm client:load />
+</AuthLayout>

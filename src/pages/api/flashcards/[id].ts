@@ -21,18 +21,18 @@ export const GET: APIRoute = async ({ params, locals }) => {
   // Get Supabase client from locals
   const { supabase } = locals;
 
-  // AUTHENTICATION DISABLED
-  // Get the session from Supabase client
-  // const { data } = await supabase.auth.getSession();
-  // const session: Session | null = data.session;
+  // Get the current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Ensure user is authenticated
-  // if (!session) {
-  //   return new Response(JSON.stringify({ error: "Unauthorized" }), {
-  //     status: 401,
-  //     headers: { "Content-Type": "application/json" },
-  //   });
-  // }
+  if (!user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   try {
     // Validate the ID parameter
@@ -100,18 +100,18 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
   // Get Supabase client from locals
   const { supabase } = locals;
 
-  // AUTHENTICATION DISABLED
-  // Get the session from Supabase client
-  // const { data } = await supabase.auth.getSession();
-  // const session: Session | null = data.session;
+  // Get the current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Ensure user is authenticated
-  // if (!session) {
-  //   return new Response(JSON.stringify({ error: "Unauthorized" }), {
-  //     status: 401,
-  //     headers: { "Content-Type": "application/json" },
-  //   });
-  // }
+  if (!user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   try {
     // Validate the ID parameter
@@ -202,18 +202,18 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
   // Get Supabase client from locals
   const { supabase } = locals;
 
-  // AUTHENTICATION DISABLED
-  // Get the session from Supabase client
-  // const { data } = await supabase.auth.getSession();
-  // const session: Session | null = data.session;
+  // Get the current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Ensure user is authenticated
-  // if (!session) {
-  //   return new Response(JSON.stringify({ error: "Unauthorized" }), {
-  //     status: 401,
-  //     headers: { "Content-Type": "application/json" },
-  //   });
-  // }
+  if (!user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   try {
     // Validate the ID parameter

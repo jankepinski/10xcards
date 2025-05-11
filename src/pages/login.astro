@@ -1,0 +1,26 @@
+---
+import AuthLayout from "../layouts/AuthLayout.astro";
+import LoginForm from "../components/auth/LoginForm";
+
+// Inicjalizacja parametrów początkowych
+const isLoading = false;
+const error = null;
+
+// Sprawdzanie, czy użytkownik jest już zalogowany
+const { locals, redirect } = Astro;
+const {
+  data: { user },
+} = await locals.supabase.auth.getUser();
+
+// Jeżeli użytkownik jest już zalogowany, przekieruj na stronę główną
+if (user) {
+  return redirect("/generate-flashcards");
+}
+
+// Strona nie jest prerenderowana, aby middleware mogło działać
+export const prerender = false;
+---
+
+<AuthLayout title="Login">
+  <LoginForm client:load isLoading={isLoading} error={error} />
+</AuthLayout>
