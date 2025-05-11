@@ -4,27 +4,34 @@ import type { Database } from "./database.types";
 
 export const cookieOptions: CookieOptionsWithName = {
   path: "/",
-  secure: true,
+  secure: process.env.NODE_ENV === "production", // Allow insecure in dev mode
   httpOnly: true,
   sameSite: "lax",
 };
 
-function parseCookieHeader(cookieHeader: string): { name: string; value: string }[] {
-  return cookieHeader.split(";").map((cookie) => {
-    const [name, ...rest] = cookie.trim().split("=");
-    return { name, value: rest.join("=") };
-  });
-}
+// Helper to safely access import.meta.env
+const getEnv = (key: string): string => {
+  // @ts-expect-error - This is the correct way to access env vars in Astro
+  return import.meta.env[key] || "";
+};
 
 export const createSupabaseServerInstance = (context: { headers: Headers; cookies: AstroCookies }) => {
-  const supabase = createServerClient<Database>(import.meta.env.SUPABASE_URL, import.meta.env.SUPABASE_KEY, {
+  // Using the same env variables that are used in supabase.client.ts
+  const supabaseUrl = getEnv("SUPABASE_URL");
+  const supabaseAnonKey = getEnv("SUPABASE_KEY");
+
+  const supabase = createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
     cookieOptions,
     cookies: {
-      getAll() {
-        return parseCookieHeader(context.headers.get("Cookie") ?? "");
+      get(name) {
+        const cookie = context.cookies.get(name);
+        return cookie?.value;
       },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) => context.cookies.set(name, value, options));
+      set(name, value, options) {
+        context.cookies.set(name, value, options);
+      },
+      remove(name, options) {
+        context.cookies.delete(name, options);
       },
     },
   });
