@@ -44,6 +44,7 @@
 3. Run the development server:
    ```sh
    supabase start
+   
    npm run dev
    ```
 
